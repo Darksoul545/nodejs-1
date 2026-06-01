@@ -21,7 +21,7 @@ pipeline {
             causeString: 'Deployment WEBHOOK Trigger',
             genericVariables: [
                     [key: 'COMMIT_MESSAGE', value: '$.head_commit.message'],
-            ]
+            ],
             printContributedVariables: true,
             regexpFilterText: '$COMMIT_MESSAGE',
             regexpFilterExpression: '^Changing',
