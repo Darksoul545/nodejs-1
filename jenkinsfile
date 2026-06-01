@@ -6,7 +6,7 @@ pipeline {
         AWS_REGION         = 'us-east-1' 
         EB_APP_NAME        = 'Jenkins-pipeline100'
         EB_ENV_NAME        = 'Jenkins-pipeline100-env'
-        S3_BUCKET          = 'elasticbeanstalk-us-east-1-629603796156' // Փոխեք ձեր bucket-ի անունով
+        S3_BUCKET          = 'elasticbeanstalk-us-east-1-629603796156' 
         VERSION_LABEL      = "build-${BUILD_NUMBER}-${BUILD_TIMESTAMP}"
         ARTIFACT_NAME      = "app-${VERSION_LABEL}.zip"
     }
@@ -26,7 +26,7 @@ pipeline {
 
         stage('Build & Package') {
             steps {
-                echo 'Building and packaging the application...'
+                echo 'Building and packaging the application1...'
                 // Եթե NodeJS է՝ zip -r ${ARTIFACT_NAME} . -x "*.git*"
                 // Եթե Maven/Java է՝ sh 'mvn clean package' և արխիվացում
                 // Այս օրինակում պարզապես ZIP ենք անում ամբողջ թղթապանակը
