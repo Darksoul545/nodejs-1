@@ -1,1 +1,72 @@
-pipeline
+pipeline {
+    agent any
+
+    environment {
+        // AWS և Beanstalk-ի փոփոխականներ
+        AWS_REGION         = 'us-east-1' 
+        EB_APP_NAME        = 'Jenkins-pipeline100'
+        EB_ENV_NAME        = 'Jenkins-pipeline100-env'
+        S3_BUCKET          = 'elasticbeanstalk-us-east-1-629603796156' // Փոխեք ձեր bucket-ի անունով
+        VERSION_LABEL      = "build-${BUILD_NUMBER}-${BUILD_TIMESTAMP}"
+        ARTIFACT_NAME      = "app-${VERSION_LABEL}.zip"
+    }
+
+    options {
+        // Սահմանում ենք թայմսթեմփի ֆորմատը VERSION_LABEL-ի համար
+        timestamps()
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Կոդի ներբեռնում Git-ից
+                checkout scm
+            }
+        }
+
+        stage('Build & Package') {
+            steps {
+                echo 'Building and packaging the application...'
+                // Եթե NodeJS է՝ zip -r ${ARTIFACT_NAME} . -x "*.git*"
+                // Եթե Maven/Java է՝ sh 'mvn clean package' և արխիվացում
+                // Այս օրինակում պարզապես ZIP ենք անում ամբողջ թղթապանակը
+                sh "zip -r ${ARTIFACT_NAME} . -x '*.git*'"
+            }
+        }
+
+        stage('Upload to S3') {
+            steps {
+                echo 'Uploading artifact to Amazon S3...'
+                // Օգտագործում ենք Jenkins AWS Steps պլագինը կամ credentials binding
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials-id']]) {
+                    sh "aws s3 cp ${ARTIFACT_NAME} s3://${S3_BUCKET}/${ARTIFACT_NAME} --region ${AWS_REGION}"
+                }
+            }
+        }
+
+        stage('Deploy to Elastic Beanstalk') {
+            steps {
+                echo 'Deploying new version to Elastic Beanstalk...'
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials-id']]) {
+                    
+                    // 1. Ստեղծում ենք հավելվածի նոր տարբերակ Beanstalk-ում՝ հղվելով S3-ի ֆայլին
+                    sh """
+                        aws elasticbeanstalk create-application-version \
+                            --application-name "${EB_APP_NAME}" \
+                            --version-label "${VERSION_LABEL}" \
+                            --source-bundle S3Bucket="${S3_BUCKET}",S3Key="${ARTIFACT_NAME}" \
+                            --region ${AWS_REGION}
+                    """
+
+                    // 2. Թարմացնում ենք Beanstalk Environment-ը նոր տարբերակով
+                    sh """
+                        aws elasticbeanstalk update-environment \
+                            --environment-name "${EB_ENV_NAME}" \
+                            --version-label "${VERSION_LABEL}" \
+                            --region ${AWS_REGION}
+                    """
+                }
+            }
+        }
+    }
+}
