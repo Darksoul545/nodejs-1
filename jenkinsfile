@@ -32,10 +32,11 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch 'master'
-                credentials_id: 'git1'
-                url: https://github.com/Darksoul545/nodejs-1
-                
+                scripts {
+                    git branch 'master',
+                    credentials_id: 'git1',
+                    url: 'https://github.com/Darksoul545/nodejs-1'
+                }
             }
         }
 
