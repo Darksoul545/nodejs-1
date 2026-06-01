@@ -16,11 +16,27 @@ pipeline {
         timestamps()
     }
 
+    triggers {
+        Generic Trigger {
+            causeString: 'Deployment WEBHOOK Trigger',
+            genericVariables: [
+                    [key: 'COMMIT_MESSAGE', value: '$.head_commit.message'],
+            ]
+            printContributedVariables: true,
+            regexpFilterText: '$COMMIT_MESSAGE',
+            regexpFilterExpression: '^Changing',
+            tokenCredentialId: "pipeline"
+        }
+                    
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                // Կոդի ներբեռնում Git-ից
-                checkout scm
+                git branch 'master'
+                credentials_id: 'git1'
+                url: https://github.com/Darksoul545/nodejs-1
+                
             }
         }
 
